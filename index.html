@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ImageenAI</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Vendor Scripts -->
+  <script src="js/vendor/jszip.min.js"></script>
+  <script src="js/vendor/FileSaver.min.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="logo">ImageenAI</div>
+    <div class="header-controls">
+        <label for="use-proxy" style="display: flex; align-items: center; gap: 5px; margin-bottom: 0;">
+            <input type="checkbox" id="use-proxy"> Use Proxy
+        </label>
+        <input type="password" id="api-key" placeholder="Paste AI Horde API Key" style="width: 200px;" />
+        <button class="btn-icon" id="theme-toggle" title="Toggle Theme">🌗</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="grid-layout">
+      <!-- Left: Prompt & Settings -->
+      <div class="card" id="prompt-card">
+        <h2>Prompt</h2>
+        <div class="input-group">
+          <label for="prompt">Positive Prompt</label>
+          <textarea id="prompt" placeholder="A futuristic city with flying cars..."></textarea>
+        </div>
+
+        <div class="input-group">
+            <span class="preset-tag" data-prompt="A detailed oil painting of a cottage in the woods, warm lighting, 4k" style="cursor: pointer; color: var(--accent-color); font-size: 0.8rem;">[Preset: Cottage]</span>
+            <span class="preset-tag" data-prompt="Cyberpunk street market, neon lights, rain, reflection, highly detailed" style="cursor: pointer; color: var(--accent-color); font-size: 0.8rem;">[Preset: Cyberpunk]</span>
+        </div>
+
+        <div class="input-group">
+          <label for="negative-prompt">Negative Prompt</label>
+          <textarea id="negative-prompt" placeholder="Blurry, low quality, bad anatomy...">low quality, bad anatomy, blurry, watermark</textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="model-select">Model</label>
+            <select id="model-select"></select>
+        </div>
+
+        <div class="input-group">
+            <label for="lora-select">LoRA <button id="add-lora-btn" style="padding: 2px 6px; font-size: 0.7rem;">+</button></label>
+            <select id="lora-select"></select>
+        </div>
+      </div>
+
+      <!-- Center: Preview & Action -->
+      <div class="card" id="preview-card" style="align-items: center;">
+        <h2>Output</h2>
+        <div class="preview-area" id="main-preview">
+            <div class="placeholder">Generated images will appear here</div>
+        </div>
+
+        <div class="status-bar">
+            <span id="status-text">Ready</span>
+            <div class="progress-bar-container" id="progress-bar-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
+            <div style="flex: 1;">
+                <label for="image-count">Count</label>
+                <input type="number" id="image-count" value="1" min="1" max="4">
+            </div>
+            <button class="btn-primary" id="generate-btn" style="flex: 2; height: 38px; align-self: flex-end;">Generate</button>
+        </div>
+      </div>
+
+      <!-- Right: Advanced Settings -->
+      <div class="card" id="settings-card">
+        <h2>Advanced Settings</h2>
+
+        <div class="input-group">
+            <label for="width">Width</label>
+            <input type="range" id="width" min="64" max="1024" step="64" value="512" oninput="this.nextElementSibling.value = this.value">
+            <output>512</output> px
+        </div>
+
+        <div class="input-group">
+            <label for="height">Height</label>
+            <input type="range" id="height" min="64" max="1024" step="64" value="512" oninput="this.nextElementSibling.value = this.value">
+            <output>512</output> px
+        </div>
+
+        <div class="input-group">
+            <label for="steps">Steps</label>
+            <input type="range" id="steps" min="10" max="50" step="1" value="20" oninput="this.nextElementSibling.value = this.value">
+            <output>20</output>
+        </div>
+
+        <div class="input-group">
+            <label for="cfg">Guidance Scale (CFG)</label>
+            <input type="range" id="cfg" min="1" max="20" step="0.5" value="7" oninput="this.nextElementSibling.value = this.value">
+            <output>7</output>
+        </div>
+
+        <div class="input-group">
+            <label for="sampler">Sampler</label>
+            <select id="sampler">
+                <option value="k_euler">Euler</option>
+                <option value="k_euler_a">Euler a</option>
+                <option value="k_dpmpp_2m">DPM++ 2M</option>
+                <option value="k_dpmpp_sde">DPM++ SDE</option>
+                <option value="ddim">DDIM</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="seed">Seed (Empty = Random)</label>
+            <input type="text" id="seed" placeholder="Random">
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom: Gallery -->
+    <div class="card gallery-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 5px;">
+            <h2 style="border: none; margin: 0;">Gallery</h2>
+            <button class="btn-secondary" id="download-zip-btn">Download All (ZIP)</button>
+        </div>
+        <div class="gallery-grid" id="gallery-grid">
+            <!-- Thumbnails injected here -->
+        </div>
+    </div>
+  </main>
+
+  <!-- Preview Modal -->
+  <div id="preview-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" id="close-modal">&times;</span>
+        <div class="modal-image">
+            <img id="modal-img" src="" alt="Full size preview">
+        </div>
+        <div class="modal-details" id="modal-details">
+            <!-- Details injected here -->
+        </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
